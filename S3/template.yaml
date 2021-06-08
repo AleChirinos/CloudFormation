@@ -1,0 +1,8 @@
+AWSTemplateFormatVersion : '2010-09-09'
+
+Description: my template
+Resources:
+    MyBucket:
+        Type: AWS::S3::Bucket
+        Properties:
+            BucketName: my-S3-bucket-ale-cloudFormationaws cloudformation deploy --template-file /path_to_template/template.json --stack-name my-new-stack
