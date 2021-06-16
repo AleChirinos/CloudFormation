@@ -1,0 +1,120 @@
+
+AWSTemplateFormatVersion : '2010-09-09'
+Transform:
+  - AWS::Serverless-2016-10-31
+
+Description: My Lambda Resources
+Resources:
+  GetUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: getUser
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref MyUsersTable
+      Handler: users.getUser
+      Runtime: python3.6
+      CodeUri: package/
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref MyUsersTable
+      Events:
+        GetUsers:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MyAPI
+            Path: "/user/{userId}"
+            Method: GET
+
+  PutUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: putUser
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref MyUsersTable
+      Handler: users.putUser
+      Runtime: python3.6
+      CodeUri: package/
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref MyUsersTable
+      Events:
+        GetUsers:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MyAPI
+            Path: "/user/{userId}"
+            Method: PUT
+  MyAPI:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: my-api-gateway
+      StageName: prod
+      DefinitionBody:
+        Fn::Transform:
+          Name: AWS::Include
+          Parameters:
+            Location: swagger.yaml
+
+  MyUsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: my-users-app-3
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+          
+  # MyTable:
+  #   Type: AWS::Serverless::SimpleTable
+  #   Properties:
+  #     TableName: my-user-app
+  #     PrimaryKey:
+  #       Name: pk
+  #       Type: String
+  #     ProvisionedThroughput:
+  #       ReadCapacityUnits: 5
+  #       WriteCapacityUnits: 5
+        
+
+  # MyLambdaRole:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     RoleName: user-lambda-role-upb
+  #     AssumeRolePolicyDocument:
+  #       Version: '2012-10-17'
+  #       Statement:
+  #       - Effect: Allow
+  #         Principal:
+  #           Service:
+  #           - lambda.amazonaws.com
+  #         Action:
+  #         - sts:AssumeRole
+  #     Path: "/"
+  #     Policies:
+  #     - PolicyName: my-lambda-policy
+  #       PolicyDocument:
+  #         Version: '2012-10-17'
+  #         Statement:
+  #         - Effect: Allow
+  #           Action:
+  #           - logs:CreateLogGroup
+  #           - logs:CreateLogStream
+  #           - logs:PutLogEvents
+  #           Resource: arn:aws:logs:*:*:*
+  #         - Effect: Allow
+  #           Action:
+  #           - dynamodb:GetItem
+  #           Resource: "arn:aws:dynamodb:*:*:table/my-users-app-3"
+
+  

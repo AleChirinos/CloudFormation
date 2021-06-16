@@ -1,0 +1,103 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform:
+- AWS::Serverless-2016-10-31
+Description: My Lambda Resources
+Resources:
+  MyLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: user-lambda-role-upb
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: /
+      Policies:
+      - PolicyName: my-lambda-policy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Resource: arn:aws:logs:*:*:*
+          - Effect: Allow
+            Action:
+            - dynamodb:GetItem
+            Resource: arn:aws:dynamodb:*:*:table/my-users-app-3
+  GetUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: getUser
+      Environment:
+        Variables:
+          USERS_TABLE:
+            Ref: MyUsersTable
+      Handler: users.getUser
+      Runtime: python3.6
+      CodeUri: s3://deployment-bucket-ale/23ce94821ea2ecda51a7d8989a302a8e
+      Role:
+        Fn::GetAtt:
+        - MyLambdaRole
+        - Arn
+      Events:
+        GetUsers:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyAPI
+            Path: /user/{userId}
+            Method: GET
+  PutUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: putUser
+      Environment:
+        Variables:
+          USERS_TABLE:
+            Ref: MyUsersTable
+      Handler: users.putUser
+      Runtime: python3.6
+      CodeUri: s3://deployment-bucket-ale/23ce94821ea2ecda51a7d8989a302a8e
+      Events:
+        GetUsers:
+          Type: Api
+          Properties:
+            RestApiId:
+              Ref: MyAPI
+            Path: /user
+            Method: PUT
+  MyAPI:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: my-api-gateway
+      StageName: prod
+      DefinitionBody:
+        Fn::Transform:
+          Name: AWS::Include
+          Parameters:
+            Location: s3://deployment-bucket-ale/68bcaa81eaef978c4211dd8e1368086e
+  MyUsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: my-users-app-3
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      KeySchema:
+      - AttributeName: pk
+        KeyType: HASH
+      - AttributeName: sk
+        KeyType: RANGE
+      AttributeDefinitions:
+      - AttributeName: pk
+        AttributeType: S
+      - AttributeName: sk
+        AttributeType: S

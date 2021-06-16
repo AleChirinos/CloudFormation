@@ -1,0 +1,205 @@
+AWSTemplateFormatVersion : '2010-09-09'
+Transform:
+  - AWS::Serverless-2016-10-31
+
+Description: My Lambda Resources
+Resources:
+  GetMovie:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: getMovie
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref MoviesTable
+      Handler: movies.getMovie
+      Runtime: python3.6
+      CodeUri: package/
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref MoviesTable
+      Events:
+        GetMovie:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MyAPI
+            Path: "/movie/{movie_id}"
+            Method: GET
+
+  PutMovie:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: putMovie
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref MoviesTable
+      Handler: movies.putMovie
+      Runtime: python3.6
+      CodeUri: package/
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref MoviesTable
+      Events:
+        PutMovie:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MyAPI
+            Path: "/movie/{movie_id}"
+            Method: PUT
+  
+   GetMovieByRoom:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: getMovieByRoom
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref MoviesTable
+      Handler: movies.getMovieByRoom
+      Runtime: python3.6
+      CodeUri: package/
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref MoviesTable
+      Events:
+        PutMovie:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MyAPI
+            Path: "/movie/{movie_id}/room/{room_id}"
+            Method: GET
+            
+  GetMovieDate:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: getMovieDate
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref MoviesTable
+      Handler: movies.getMovieDate
+      Runtime: python3.6
+      CodeUri: package/
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref MoviesTable
+      Events:
+        GetMovie:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MyAPI
+            Path: "/movie/{movie_id}/date/{date_id}"
+            Method: GET
+          
+            
+  GetMovieByPerson:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: getMovieByPerson
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref MoviesTable
+      Handler: movies.getMovieByPerson
+      Runtime: python3.6
+      CodeUri: package/
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref MoviesTable
+      Events:
+        GetMovie:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MyAPI
+            Path: "/person/{person_id}"
+            Method: GET
+            
+  PutPeople:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: putPeople
+      Environment:
+        Variables:
+          USERS_TABLE: !Ref MoviesTable
+      Handler: movies.putPeople
+      Runtime: python3.6
+      CodeUri: package/
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref MoviesTable
+      Events:
+        PutMovie:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MyAPI
+            Path: "/room/{room_id}"
+            Method: PUT
+
+  MyAPI:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: movies-app
+      StageName: prod
+      DefinitionBody:
+        Fn::Transform:
+          Name: AWS::Include
+          Parameters:
+            Location: swagger.yaml
+
+  MoviesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: movies-app
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+  
+  # MyTable:
+  #   Type: AWS::Serverless::SimpleTable
+  #   Properties:
+  #     TableName: my-user-app
+  #     PrimaryKey:
+  #       Name: pk
+  #       Type: String
+  #     ProvisionedThroughput:
+  #       ReadCapacityUnits: 5
+  #       WriteCapacityUnits: 5
+        
+
+  # MyLambdaRole:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     RoleName: user-lambda-role-upb
+  #     AssumeRolePolicyDocument:
+  #       Version: '2012-10-17'
+  #       Statement:
+  #       - Effect: Allow
+  #         Principal:
+  #           Service:
+  #           - lambda.amazonaws.com
+  #         Action:
+  #         - sts:AssumeRole
+  #     Path: "/"
+  #     Policies:
+  #     - PolicyName: my-lambda-policy
+  #       PolicyDocument:
+  #         Version: '2012-10-17'
+  #         Statement:
+  #         - Effect: Allow
+  #           Action:
+  #           - logs:CreateLogGroup
+  #           - logs:CreateLogStream
+  #           - logs:PutLogEvents
+  #           Resource: arn:aws:logs:*:*:*
+  #         - Effect: Allow
+  #           Action:
+  #           - dynamodb:GetItem
+  #           Resource: "arn:aws:dynamodb:*:*:table/my-users-app-3"
+
+  
